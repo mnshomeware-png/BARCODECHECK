@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Barcode Verifier">
+    <meta name="description" content="Professional barcode verification system for inventory management">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Barcode Verification System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .upload-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .scan-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .scan-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .scan-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1em;
+        }
+
+        .scan-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        #camera-container {
+            display: none;
+            margin-top: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        #camera-view {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .search-section {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+
+        .product-table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .verified {
+            background: #d4edda !important;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-verified {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-pending {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .message {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            animation: slideIn 0.3s;
+        }
+
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .message-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .barcode-input-container {
+            position: relative;
+        }
+
+        .barcode-input-container input {
+            padding-right: 50px;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 1.2em;
+            line-height: 1;
+        }
+
+        #message-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .scan-controls {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="message-container"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📦 Barcode Verification System</h1>
+            <p>Upload, Scan, Verify & Export your product inventory</p>
+            <p id="lastSaved" style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;"></p>
+        </div>
+
+        <div class="content">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2 style="margin-bottom: 15px;">📁 Upload Product List</h2>
+                <p style="margin-bottom: 20px; color: #666;">Upload an Excel file (.xlsx, .xls)</p>
+                <p style="margin-bottom: 10px; color: #555; font-size: 0.95em;"><strong>Column 1:</strong> BARCODE | PRODUCT NAME | PCS | COST | SELLING PRICE | REFERENCE</p>
+                <p style="margin-bottom: 20px; color: #555; font-size: 0.95em;"><strong>Column 2:</strong> QUANTITY</p>
+                <input type="file" id="fileInput" accept=".xlsx, .xls">
+                <label for="fileInput">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        Choose Excel File
+                    </button>
+                </label>
+                <p id="fileName" style="margin-top: 15px; color: #667eea; font-weight: 600;"></p>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-container hidden" id="statsContainer">
+                <div class="stat-card">
+                    <h3 id="totalProducts">0</h3>
+                    <p>Total Products</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <h3 id="verifiedCount">0</h3>
+                    <p>Verified ✓</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                    <h3 id="remainingCount">0</h3>
+                    <p>Remaining</p>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                    <h3 id="percentComplete">0%</h3>
+                    <p>Complete</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar hidden" id="progressBar">
+                <div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
+            </div>
+
+            <!-- Scan Section -->
+            <div class="scan-section hidden" id="scanSection">
+                <h2 style="margin-bottom: 20px;">🔍 Scan Barcode</h2>
+                <div class="scan-controls">
+                    <div class="barcode-input-container" style="flex: 1; min-width: 250px;">
+                        <input type="text" id="barcodeInput" class="scan-input" placeholder="Scan or enter barcode..." autofocus>
+                        <button class="clear-btn" onclick="clearBarcodeInput()" title="Clear">×</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="verifyBarcode()">Verify Barcode</button>
+                    <button class="btn btn-success" onclick="toggleCamera()">📷 Camera Scan</button>
+                </div>
+                <div id="camera-container">
+                    <div id="camera-view"></div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="search-section hidden" id="searchSection">
+                <h2 style="margin-bottom: 20px;">🔎 Search & Update Product</h2>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by product name...">
+                <div id="searchResults"></div>
+            </div>
+
+            <!-- Export Section -->
+            <div class="hidden" id="exportSection" style="margin-bottom: 30px; text-align: center;">
+                <button class="btn btn-success" onclick="exportExcel()" style="font-size: 1.1em; padding: 15px 40px; margin-right: 10px;">
+                    📥 Export Updated Excel
+                </button>
+                <button class="btn btn-danger" onclick="clearLocalStorage()" style="font-size: 1.1em; padding: 15px 40px;">
+                    🗑️ Clear All Data
+                </button>
+            </div>
+
+            <!-- Product Table -->
+            <div class="product-table-container hidden" id="tableContainer">
+                <table id="productTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Barcode</th>
+                            <th>Product Name</th>
+                            <th>PCS</th>
+                            <th>Cost</th>
+                            <th>Selling Price</th>
+                            <th>Reference</th>
+                            <th>Quantity</th>
+                            <th>Updated Barcode</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let products = [];
+        let verifiedProducts = new Set();
+        let cameraActive = false;
+
+        // Load data from localStorage on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadFromLocalStorage();
+        });
+
+        // Auto-save every time data changes
+        function saveToLocalStorage() {
+            try {
+                const dataToSave = {
+                    products: products,
+                    verifiedProducts: Array.from(verifiedProducts),
+                    lastUpdated: new Date().toISOString()
+                };
+                localStorage.setItem('barcodeVerificationData', JSON.stringify(dataToSave));
+                
+                // Update last saved indicator
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                document.getElementById('lastSaved').textContent = `💾 Auto-saved at ${timeStr}`;
+                
+                console.log('Data saved to localStorage');
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+                showMessage('Warning: Could not save data to browser storage', 'error');
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('barcodeVerificationData');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    products = parsed.products || [];
+                    verifiedProducts = new Set(parsed.verifiedProducts || []);
+                    
+                    if (products.length > 0) {
+                        const lastUpdated = new Date(parsed.lastUpdated);
+                        const timeStr = lastUpdated.toLocaleString();
+                        
+                        showMessage(`✓ Restored ${products.length} products from previous session (${timeStr})`, 'success');
+                        document.getElementById('lastSaved').textContent = `💾 Last saved: ${timeStr}`;
+                        initializeSystem();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading from localStorage:', error);
+            }
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        function clearLocalStorage() {
+            if (confirm('Are you sure you want to clear all saved data? This cannot be undone!')) {
+                localStorage.removeItem('barcodeVerificationData');
+                products = [];
+                verifiedProducts = new Set();
+                
+                // Hide all sections
+                document.getElementById('statsContainer').classList.add('hidden');
+                document.getElementById('progressBar').classList.add('hidden');
+                document.getElementById('scanSection').classList.add('hidden');
+                document.getElementById('searchSection').classList.add('hidden');
+                document.getElementById('exportSection').classList.add('hidden');
+                document.getElementById('tableContainer').classList.add('hidden');
+                document.getElementById('fileName').textContent = '';
+                document.getElementById('lastSaved').textContent = '';
+                
+                showMessage('All data cleared!', 'info');
+            }
+        }
+
+        // File Upload Handler
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileName').textContent = `Loading: ${file.name}...`;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                    if (jsonData.length === 0) {
+                        showMessage('Excel file is empty!', 'error');
+                        return;
+                    }
+
+                    // Process products - expecting format:
+                    // Column A: BARCODE | PRODUCT NAME | PCS | COST | SELLING PRICE | REFERENCE
+                    // Column B: QUANTITY
+                    products = [];
+                    let validCount = 0;
+                    
+                    jsonData.forEach((row, index) => {
+                        if (index === 0) return; // Skip header if exists
+                        
+                        const firstCol = row[0];
+                        const quantity = row[1] || '0';
+                        
+                        if (!firstCol) return; // Skip empty rows
+                        
+                        // Split the first column by pipe (|)
+                        const parts = String(firstCol).split('|').map(p => p.trim());
+                        
+                        if (parts.length >= 2) {
+                            const product = {
+                                id: validCount + 1,
+                                barcode: parts[0] || '',
+                                productName: parts[1] || '',
+                                pcs: parts[2] || '',
+                                cost: parts[3] || '',
+                                sellingPrice: parts[4] || '',
+                                reference: parts[5] || '',
+                                quantity: String(quantity),
+                                updatedBarcode: '',
+                                verified: false
+                            };
+                            
+                            products.push(product);
+                            validCount++;
+                        }
+                    });
+
+                    if (products.length === 0) {
+                        showMessage('No valid products found. Please check Excel format!', 'error');
+                        return;
+                    }
+
+                    document.getElementById('fileName').textContent = `✓ Loaded: ${file.name} (${products.length} products)`;
+                    initializeSystem();
+                    saveToLocalStorage(); // Save immediately after loading
+                    showMessage(`Successfully loaded ${products.length} products!`, 'success');
+                } catch (error) {
+                    showMessage('Error reading Excel file. Please check the format.', 'error');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function initializeSystem() {
+            // Show all sections
+            document.getElementById('statsContainer').classList.remove('hidden');
+            document.getElementById('progressBar').classList.remove('hidden');
+            document.getElementById('scanSection').classList.remove('hidden');
+            document.getElementById('searchSection').classList.remove('hidden');
+            document.getElementById('exportSection').classList.remove('hidden');
+            document.getElementById('tableContainer').classList.remove('hidden');
+
+            updateStats();
+            renderTable();
+            setupSearch();
+        }
+
+        function updateStats() {
+            const verified = products.filter(p => p.verified).length;
+            const total = products.length;
+            const remaining = total - verified;
+            const percent = total > 0 ? Math.round((verified / total) * 100) : 0;
+
+            document.getElementById('totalProducts').textContent = total;
+            document.getElementById('verifiedCount').textContent = verified;
+            document.getElementById('remainingCount').textContent = remaining;
+            document.getElementById('percentComplete').textContent = percent + '%';
+
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = percent + '%';
+        }
+
+        function renderTable(filterText = '') {
+            const tbody = document.getElementById('productTableBody');
+            tbody.innerHTML = '';
+
+            const filteredProducts = filterText 
+                ? products.filter(p => p.productName.toLowerCase().includes(filterText.toLowerCase()) || 
+                                     p.barcode.includes(filterText))
+                : products;
+
+            filteredProducts.forEach(product => {
+                const row = document.createElement('tr');
+                if (product.verified) {
+                    row.classList.add('verified');
+                }
+
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td><strong>${product.barcode}</strong></td>
+                    <td>${product.productName}</td>
+                    <td>${product.pcs}</td>
+                    <td>${product.cost}</td>
+                    <td>${product.sellingPrice}</td>
+                    <td>${product.reference}</td>
+                    <td>${product.quantity}</td>
+                    <td><strong style="color: #28a745;">${product.updatedBarcode || '-'}</strong></td>
+                    <td>
+                        <span class="status-badge ${product.verified ? 'status-verified' : 'status-pending'}">
+                            ${product.verified ? '✓ Verified' : 'Pending'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-warning" style="padding: 8px 15px; font-size: 0.9em;" onclick="editBarcode(${product.id})">
+                            Edit
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function verifyBarcode() {
+            const barcode = document.getElementById('barcodeInput').value.trim();
+            if (!barcode) {
+                showMessage('Please enter a barcode!', 'error');
+                return;
+            }
+
+            const product = products.find(p => 
+                p.barcode === barcode && !p.verified
+            );
+
+            if (product) {
+                product.verified = true;
+                product.updatedBarcode = barcode;
+                verifiedProducts.add(product.id);
+                
+                saveToLocalStorage(); // Save after verification
+                
+                showMessage(`✓ Verified: ${product.productName}`, 'success');
+                updateStats();
+                renderTable();
+                
+                // Clear input and focus for next scan
+                document.getElementById('barcodeInput').value = '';
+                document.getElementById('barcodeInput').focus();
+            } else {
+                const alreadyVerified = products.find(p => p.barcode === barcode && p.verified);
+                if (alreadyVerified) {
+                    showMessage(`Product already verified: ${alreadyVerified.productName}`, 'info');
+                    document.getElementById('barcodeInput').value = '';
+                } else {
+                    // Barcode not found - offer to search and update
+                    const searchForProduct = confirm(`❌ Barcode "${barcode}" not found!\n\nWould you like to search for a product to update its barcode?`);
+                    
+                    if (searchForProduct) {
+                        showIncorrectBarcodeDialog(barcode);
+                    } else {
+                        document.getElementById('barcodeInput').value = '';
+                    }
+                }
+            }
+        }
+
+        function showIncorrectBarcodeDialog(scannedBarcode) {
+            // Create modal for searching product
+            const modal = document.createElement('div');
+            modal.id = 'incorrectBarcodeModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="margin-bottom: 20px; color: #dc3545;">⚠️ Incorrect Barcode: ${scannedBarcode}</h2>
+                    <p style="margin-bottom: 20px; color: #666;">Search for the product you want to update:</p>
+                    
+                    <input type="text" id="modalSearchInput" placeholder="Type product name..." 
+                        style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.1em; margin-bottom: 20px;">
+                    
+                    <div id="modalSearchResults" style="max-height: 300px; overflow-y: auto;"></div>
+                    
+                    <button onclick="closeIncorrectBarcodeModal()" 
+                        style="margin-top: 20px; padding: 12px 30px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em;">
+                        Cancel
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            
+            const searchInput = modal.querySelector('#modalSearchInput');
+            const resultsDiv = modal.querySelector('#modalSearchResults');
+            
+            searchInput.focus();
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim().toLowerCase();
+                
+                if (searchTerm.length < 2) {
+                    resultsDiv.innerHTML = '<p style="color: #999; padding: 10px;">Type at least 2 characters...</p>';
+                    return;
+                }
+                
+                const matches = products.filter(p => 
+                    p.productName.toLowerCase().includes(searchTerm) ||
+                    p.barcode.includes(searchTerm)
+                );
+                
+                if (matches.length === 0) {
+                    resultsDiv.innerHTML = '<p style="color: #999; padding: 10px;">No products found</p>';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = matches.slice(0, 20).map(p => `
+                    <div style="padding: 15px; border: 2px solid ${p.verified ? '#28a745' : '#ddd'}; 
+                        border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;"
+                        onmouseover="this.style.background='#f8f9fa'" 
+                        onmouseout="this.style.background='white'"
+                        onclick="updateProductBarcode(${p.id}, '${scannedBarcode}')">
+                        <strong style="color: #667eea;">${p.productName}</strong><br>
+                        <small style="color: #666;">Current Barcode: ${p.barcode}</small><br>
+                        <small style="color: ${p.verified ? '#28a745' : '#ffc107'};">${p.verified ? '✓ Verified' : 'Pending'}</small>
+                    </div>
+                `).join('');
+            });
+        }
+
+        window.closeIncorrectBarcodeModal = function() {
+            const modal = document.getElementById('incorrectBarcodeModal');
+            if (modal) {
+                modal.remove();
+            }
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('barcodeInput').focus();
+        };
+
+        window.updateProductBarcode = function(productId, newBarcode) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            const confirmUpdate = confirm(`Update barcode for:\n\n${product.productName}\n\nFrom: ${product.barcode}\nTo: ${newBarcode}\n\nConfirm?`);
+            
+            if (confirmUpdate) {
+                product.updatedBarcode = newBarcode;
+                product.verified = true;
+                verifiedProducts.add(product.id);
+                
+                saveToLocalStorage(); // Save after update
+                
+                showMessage(`✓ Updated barcode for: ${product.productName}`, 'success');
+                updateStats();
+                renderTable();
+                
+                // Close the modal
+                closeIncorrectBarcodeModal();
+            }
+        };
+
+        function clearBarcodeInput() {
+            document.getElementById('barcodeInput').value = '';
+            document.getElementById('barcodeInput').focus();
+        }
+
+        // Enter key to verify
+        document.getElementById('barcodeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyBarcode();
+            }
+        });
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.trim();
+                if (searchTerm.length > 0) {
+                    showSearchResults(searchTerm);
+                } else {
+                    document.getElementById('searchResults').innerHTML = '';
+                    renderTable();
+                }
+            });
+        }
+
+        function showSearchResults(searchTerm) {
+            const results = products.filter(p => 
+                p.productName.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            renderTable(searchTerm);
+
+            const resultsDiv = document.getElementById('searchResults');
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p style="color: #999; padding: 10px;">No products found</p>';
+            } else {
+                resultsDiv.innerHTML = `<p style="color: #667eea; padding: 10px; font-weight: 600;">Found ${results.length} product(s)</p>`;
+            }
+        }
+
+        function editBarcode(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            // Create a better edit dialog
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            `;
+
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
+                    <h2 style="margin-bottom: 20px; color: #667eea;">✏️ Edit Barcode</h2>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="display: block; margin-bottom: 5px; color: #333;">Product:</strong>
+                        <p style="color: #666; font-size: 1.1em;">${product.productName}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="display: block; margin-bottom: 5px; color: #333;">Current Barcode:</strong>
+                        <p style="color: #666; font-size: 1.1em;">${product.barcode}</p>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <strong style="display: block; margin-bottom: 10px; color: #333;">New Barcode:</strong>
+                        <input type="text" id="newBarcodeInput" value="${product.updatedBarcode || product.barcode}" 
+                            style="width: 100%; padding: 12px; border: 2px solid #667eea; border-radius: 8px; font-size: 1.1em;">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button onclick="this.closest('div').parentElement.remove();" 
+                            style="padding: 12px 25px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em;">
+                            Cancel
+                        </button>
+                        <button onclick="saveEditedBarcode(${productId}, this.closest('div').parentElement.parentElement);" 
+                            style="padding: 12px 25px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1em;">
+                            Save
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            document.getElementById('newBarcodeInput').focus();
+            document.getElementById('newBarcodeInput').select();
+        }
+
+        window.saveEditedBarcode = function(productId, modalElement) {
+            const newBarcode = document.getElementById('newBarcodeInput').value.trim();
+            
+            if (!newBarcode) {
+                alert('Please enter a barcode!');
+                return;
+            }
+            
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            product.updatedBarcode = newBarcode;
+            product.verified = true;
+            verifiedProducts.add(product.id);
+            
+            saveToLocalStorage(); // Save after edit
+            
+            showMessage(`✓ Updated barcode for: ${product.productName}`, 'success');
+            updateStats();
+            renderTable();
+            
+            modalElement.remove();
+        };
+
+        function toggleCamera() {
+            if (!cameraActive) {
+                startCamera();
+            } else {
+                stopCamera();
+            }
+        }
+
+        function startCamera() {
+            const container = document.getElementById('camera-container');
+            container.style.display = 'block';
+            
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#camera-view'),
+                    constraints: {
+                        width: 640,
+                        height: 480,
+                        facingMode: "environment"
+                    },
+                },
+                decoder: {
+                    readers: ["code_128_reader", "ean_reader", "ean_8_reader", "code_39_reader", "upc_reader", "upc_e_reader"]
+                }
+            }, function(err) {
+                if (err) {
+                    console.error(err);
+                    showMessage('Camera access denied or not available', 'error');
+                    return;
+                }
+                Quagga.start();
+                cameraActive = true;
+            });
+
+            Quagga.onDetected(function(result) {
+                const code = result.codeResult.code;
+                document.getElementById('barcodeInput').value = code;
+                verifyBarcode();
+            });
+        }
+
+        function stopCamera() {
+            Quagga.stop();
+            document.getElementById('camera-container').style.display = 'none';
+            cameraActive = false;
+        }
+
+        function exportExcel() {
+            if (products.length === 0) {
+                showMessage('No data to export!', 'error');
+                return;
+            }
+
+            const exportData = products.map(p => ({
+                'Barcode': p.barcode,
+                'Product Name': p.productName,
+                'PCS': p.pcs,
+                'Cost': p.cost,
+                'Selling Price': p.sellingPrice,
+                'Reference': p.reference,
+                'Quantity': p.quantity,
+                'Updated Barcode': p.updatedBarcode || p.barcode,
+                'Status': p.verified ? 'Verified' : 'Pending'
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Products");
+
+            const fileName = `Barcode_Verification_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+
+            showMessage(`Exported ${products.length} products successfully!`, 'success');
+        }
+
+        function showMessage(text, type) {
+            const container = document.getElementById('message-container');
+            const message = document.createElement('div');
+            message.className = `message message-${type}`;
+            message.textContent = text;
+            
+            container.appendChild(message);
+
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
